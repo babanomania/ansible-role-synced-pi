@@ -1,0 +1,11 @@
+---
+- name: Ensure borgbackup is installed
+  become: true
+  ansible.builtin.apt:
+    name:
+      - borgbackup
+      - borgmatic
+    state: present
+  notify:
+    - borg init
+    - borg restore

@@ -1,0 +1,5 @@
+---
+- import_tasks: pre.yml
+- import_tasks: rclone.yml
+- import_tasks: borg.yml
+- import_tasks: scheduling.yml

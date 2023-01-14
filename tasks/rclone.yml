@@ -1,0 +1,7 @@
+---
+- name: Ensure rclone is installed
+  become: true
+  ansible.builtin.apt:
+    name: rclone
+    state: present
+  notify: rclone sync

@@ -1,0 +1,4 @@
+---
+- import_tasks: sync_restore.yml
+- import_tasks: backup_restore.yml
+- import_tasks: schedule_backups.yml

@@ -1,0 +1,71 @@
+---
+- name: Check if backup_sync directory exists
+  stat:
+    path: "{{ base_path }}/{{ backup.scripts_path }}"
+  register: backup_sync
+
+- name: Create backup directory
+  become: true
+  become_user: "{{ ansible_user }}"
+  file:
+    path: "{{ base_path }}/{{ backup.scripts_path }}"
+    state: directory
+  when: backup_sync.stat.exists == False
+
+- name: Ensure backup script is present
+  become: true
+  become_user: "{{ ansible_user }}"
+  template:
+    src: do_backup.sh.j2
+    dest: "{{ base_path }}/{{ backup.scripts_path }}/do_backup.sh"
+    mode: u=rw,g=rx,o=rx
+
+- name: Ensure pre_backup script is present
+  become: true
+  become_user: "{{ ansible_user }}"
+  copy:
+    content: "{{ backup_script }}"
+    dest: "{{ base_path }}/{{ backup.scripts_path }}/pre_backup.sh"
+    mode: u=rw,g=rx,o=rx
+  notify: "schedule backup"
+
+- name: Ensure sync script is present
+  become: true
+  become_user: "{{ ansible_user }}"
+  template:
+    src: do_sync.sh.j2
+    dest: "{{ base_path }}/{{ backup.scripts_path }}/do_sync.sh"
+    mode: u=rw,g=rx,o=rx
+
+- name: Ensure post_sync script is present
+  become: true
+  become_user: "{{ ansible_user }}"
+  copy:
+    content: "{{ restore_script }}"
+    dest: "{{ base_path }}/{{ backup.scripts_path }}/post_sync.sh"
+    mode: u=rw,g=rx,o=rx
+  notify: "schedule sync"
+
+- name: Ensure alert script is present
+  become: true
+  become_user: "{{ ansible_user }}"
+  template:
+    src: do_alert.sh.j2
+    dest: "{{ base_path }}/do_alert.sh"
+    mode: u=rw,g=rx,o=rx
+  when: discord_alerts
+  notify:
+    - "schedule backup"
+    - "schedule sync"
+
+- name: Ensure empty script is present for alerts
+  become: true
+  become_user: "{{ ansible_user }}"
+  copy:
+    content: ""
+    dest: "{{ base_path }}/do_alert.sh"
+    mode: u=rw,g=rx,o=rx
+  when: not discord_alerts
+  notify:
+    - "schedule backup"
+    - "schedule sync"

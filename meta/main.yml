@@ -1,0 +1,15 @@
+galaxy_info:
+  author: babanomania
+  role_name: synced_pi
+  description: Configures an Raspberry Pi with Online Backupos
+  license: license (MIT)
+  min_ansible_version: "2.12"
+  platforms:
+    - name: Debian
+      versions:
+        - all
+  galaxy_tags:
+    - system
+    - raspberry
+    - pi
+dependencies: []

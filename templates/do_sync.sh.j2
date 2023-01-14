@@ -1,0 +1,11 @@
+#!/bin/sh
+cd {{ base_path }}/
+. ~/.profile
+
+rclone -v sync {{ base_path }}/{{ borg_repo_path }} remote:{{ rclone_remote_path }}
+
+cd {{ base_path }}/{{ backup.scripts_path }}
+sh post_sync.sh
+
+cd {{ base_path }}
+sh do_alert.sh "sync complete"

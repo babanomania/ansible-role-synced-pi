@@ -1,0 +1,3 @@
+[remote]
+type = {{ rclone_type }}
+token = {{ rclone_token | regex_replace('\'','"') }}

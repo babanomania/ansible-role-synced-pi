@@ -1,0 +1,68 @@
+---
+- name: Check if borg repository exists
+  stat:
+    path: "{{ base_path }}/{{ borg_repo_path }}"
+  listen: borg init
+  register: borg_repo
+
+- name: Create borg repository directory
+  become: true
+  become_user: "{{ ansible_user }}"
+  file:
+    path: "{{ base_path }}/{{ borg_repo_path }}"
+    state: directory
+  listen: borg init
+  when: borg_repo.stat.exists == False
+
+- name: Ensure borg repository is initalized
+  become: true
+  become_user: "{{ ansible_user }}"
+  expect:
+    command: "sudo borg init -e repokey-blake2 {{ base_path }}/{{ borg_repo_path }}"
+    responses:
+      (.*)passphrase(.*): "{{ borg_pass }}"
+      (.*)[yN]: N
+  listen: borg init
+  when: not data_restore
+
+- name: Check if backup source directory exists
+  become: true
+  stat:
+    path: "{{ base_path }}/{{ backup.source_path }}"
+  listen: borg restore
+  register: backup_path
+
+- name: Create backup source directory
+  become: true
+  become_user: "{{ ansible_user }}"
+  file:
+    path: "{{ base_path }}/{{ backup.source_path }}"
+    state: directory
+  listen: borg restore
+  when:
+    - backup_path.stat.exists == False
+    - data_restore == False
+
+- name: Take Latest Backup from Borg Repository
+  become: true
+  become_user: "{{ ansible_user }}"
+  expect:
+    command: "sudo borg list --last 1 {{ base_path }}/{{ borg_repo_path }} | tail -1 | awk '{ print $1 }"
+    responses:
+      (.*)passphrase(.*): "{{ borg_pass }}"
+      (.*)[yN]: Y
+  register: last_backup
+  listen: borg restore
+  when: data_restore == True
+
+- name: Restore from Borg Repository
+  become: true
+  become_user: "{{ ansible_user }}"
+  expect:
+    chdir: "{{ base_path }}/{{ backup.source_path }}"
+    command: "sudo borg extract {{ base_path }}/{{ borg_repo_path }}::{{ last_backup.stdout_lines[1].split(' ')[0] }}"
+    responses:
+      (.*)passphrase(.*): "{{ borg_pass }}"
+      (.*)[yN]: Y
+  listen: borg restore
+  when: data_restore == True
